@@ -39,9 +39,22 @@ int main() {
             if (key == 'q') {
                 break;
             }
-        }
 
-        // You can do other processing here
+            switch(key) {
+                case 'w':
+                    cout << "snake moves up" << endl; // snake moves up function
+                    break;
+                case 'a':
+                    cout << "snake moves left" << endl; // snake moves left function
+                    break;
+                case 's':
+                    cout << "snake moves down" << endl; // snake moves down function
+                    break;
+                case 'd':
+                    cout << "snake moves right" << endl; // snake moves right function
+                    break;
+            }
+        }
         
 
         // Add a delay to avoid high CPU usage

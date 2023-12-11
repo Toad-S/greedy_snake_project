@@ -1,6 +1,7 @@
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
+using namespace std;
 
 // Function to set terminal attributes for non-blocking input
 void setNonBlockingMode() {
@@ -22,13 +23,17 @@ int main() {
 
     char key;
 
-    std::cout << "Press 'q' to quit." << std::endl;
+    cout << "Press 'q' to quit." << endl;
 
     while (true) {
         // Check if a key is pressed
         if (read(STDIN_FILENO, &key, 1) > 0) {
+            //Clear the screen before printing new things
+            system("clear");
+
             // Print the pressed key
-            std::cout << "Key pressed: " << key << std::endl;
+            cout << "Press 'q' to quit" << endl; 
+            cout << "Key pressed: " << key << endl;
 
             // Check if the pressed key is 'q' to exit
             if (key == 'q') {

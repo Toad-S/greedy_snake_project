@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <string>
 #include <vector>
+#include <deque>
+#include <cstdlib>
 #include "get_keyboard_input.cpp"
 //因為不知道要怎麼一起執行 main.cpp 和 get_keyboard_input.cpp 所以先 include .cpp file instead of .hpp file
 using namespace std;
@@ -19,14 +21,13 @@ struct Snake
     int y; // The y coordinate of the snake
 };
 
-void snakeMove(char&, vector<vector<char> >&, Snake&, int, int, char&);
+void snakeMove(char&, vector<vector<char> >&, Snake&, int&, int&, char&);
 
 vector<vector<char> > createMap();
 // Intput argument 1: map_verlen, the gaming map's vertical length 
 // Input argument 2: map_horlen, the gaming map's horizontal length
 // map_verlen and map_horlen can be input by user before the game starts
 // The function creates and return a map vector, which is constructed by a 2D vector
-// The function prints the clear map out when it's called (without snake and other objects).
 
 void createsnake(vector<vector<char> >&, Snake&);
 
@@ -39,15 +40,22 @@ void printCurMap(vector<vector<char> >&);
 
 int main()
 {
+    // Make snake struct
     Snake snake;
+
     // Ask user to input map size
-    cout << "Enter the vertical size of the map: ";
-    cin >> map_verlen;
-    cout << "Enter the horizontal size of the map: ";
-    cin >> map_horlen;
+    // The minimal vertical and horizontal size of the map is 25
+    do
+    {
+        cout << "Enter the vertical size of the map (minimal vertical size: 25): ";
+        cin >> map_verlen;
+        cout << "Enter the horizontal size of the map (minimal horizontal size: 25): ";
+        cin >> map_horlen;
+    } while ((map_verlen < 25) || (map_horlen < 25));
 
     // Set the record board
-    int score = 0;
+    snake.len = 1;
+    int score = snake.len;
 
     system("clear"); // Clear the screen before printing the map and the record board
     recordboard(score); // Print the record board
@@ -56,14 +64,7 @@ int main()
     vector<vector<char> > map = createMap();
 
     // Print the map
-    for (int i = 0; i < map_verlen + MAP_HORBOND; i++)
-    {
-        for (int j = 0; j < map_horlen + MAP_VERBOND; j++)
-        {
-            cout << map[i][j];
-        }
-        cout << endl;
-    }
+    printCurMap(map);
 
     // Create the snake
     createsnake(map, snake);
@@ -78,7 +79,7 @@ int main()
         // When user doesn't input any value within 1/16 sec, it'll return '0'
         
         // Remember the w, a, s, d input as the previous input
-        // 當 keyboard input 不是 w, a, s, d, q 時，會進入 snakeMove() 的 default case
+        // 當 keyboard input 不是 w, a, s, d, q 時，會進入 snakeMove() 不讓其他輸入影響蛇的移動速度
         // 此時就要先知道上次輸入是往哪邊走，才能決定蛇要繼續往哪個方向走
         if (((key == 'w') || (key == 'a')) || ((key == 's') || (key == 'd')))
         {
@@ -94,6 +95,10 @@ int main()
 
         // Move the snake
         if (key == 'q') // Exit checking
+        {
+            exit(1);
+        }
+        else if (key == 'r') // Restart a new game
         {
             break;
         }
@@ -112,6 +117,8 @@ int main()
 //testing function
 void createsnake(vector<vector<char> >& map, Snake& snake)
 {
+    // Choose the random size
+    
     //The four corner of the map
     int top = MAP_HORBOND / 2;
     int leftMost = MAP_VERBOND / 2;
@@ -123,7 +130,7 @@ void createsnake(vector<vector<char> >& map, Snake& snake)
 }
 
 //testing function
-void snakeMove(char& key, vector<vector<char> >& map, Snake& snake, int map_verlen, int map_horlen, char& pre_key)
+void snakeMove(char& key, vector<vector<char> >& map, Snake& snake, int& map_verlen, int& map_horlen, char& pre_key)
 {
     //The four corner of the map
     int top = MAP_HORBOND / 2;

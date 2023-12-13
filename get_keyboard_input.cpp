@@ -1,55 +1,72 @@
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/select.h>
+#include "get_keyboard_input.hpp"
 using namespace std;
 
 void setNonBlockingMode();
 // Function to set terminal attributes for non-blocking input
 
+char getkeyin();
+// Function that gets a keyboard input immediately
+// and return the character that it gets from the keyboard input
 
-int main() {
+
+//use for debuging
+// int main()
+// {
+//     while (true)
+//     {
+//         char key = getkeyin();
+        
+//         if (key == 'q')
+//             break;
+        
+//         system("clear");
+//         usleep(10000);
+//         cout << "keypressed: " << key << endl;
+//     }
+
+//     return 0;
+// }
+
+char getkeyin()
+{
     // Set terminal to non-blocking mode
     setNonBlockingMode();
 
-    char key;
+    // Settint input time limit
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
 
-    cout << "Press 'q' to quit." << endl;
+    struct timeval timeout;
+    timeout.tv_sec = 0;  // input 時間限制（單位：秒）
+    timeout.tv_usec = 62500; // input 時間限制（單位：微秒）
 
-    while (true) {
-        // Clear the console
-        system("clear");
+    // Check input time
+    int result = select(STDIN_FILENO + 1, &fds, nullptr, nullptr, &timeout);
 
-        // Check if a key is pressed
-        if (read(STDIN_FILENO, &key, 1) > 0) {
-            // Print the pressed key
-            cout << "Press 'q' to quit" << endl; 
-            cout << "Key pressed: " << key << endl;
+    char key = '\0';
 
-            // Check if the pressed key is 'q' to exit
-            if (key == 'q') {
-                break;
-            }
-
-            switch(key) {
-                case 'w':
-                    cout << "snake moves up" << endl; // snake moves up function
-                    break;
-                case 'a':
-                    cout << "snake moves left" << endl; // snake moves left function
-                    break;
-                case 's':
-                    cout << "snake moves down" << endl; // snake moves down function
-                    break;
-                case 'd':
-                    cout << "snake moves right" << endl; // snake moves right function
-                    break;
-            }
-        }
-        
-
-        // Add a delay to avoid high CPU usage
-        usleep(10000); // Sleep for 10 milliseconds
+    if (result == -1)
+    {
+        perror("select");
     }
+    else if (result == 0)
+    {
+        return '0';
+    }
+    else
+    {
+        // Get keyboard input
+        read(STDIN_FILENO, &key, 1);
+    }
+
+    // Read one byte from the standard input from the keyboard and store the value in variable key
+    // read(STDIN_FILENO, &key, 1);
 
     // Reset terminal attributes
     struct termios ttystate;
@@ -57,11 +74,12 @@ int main() {
     ttystate.c_lflag |= (ICANON | ECHO);
     tcsetattr(STDIN_FILENO, TCSANOW, &ttystate);
 
-    return 0;
+    return key;
 }
 
 
-void setNonBlockingMode() {
+void setNonBlockingMode()
+{
     // 建立一個 termios object 叫做 ttystate
     struct termios ttystate;
 

@@ -31,6 +31,12 @@ struct Map
     int map_horlen; // Map horizontal length
 };
 
+struct Food
+{
+    vector<vector<int> > coordinate;
+    int timer;
+};
+
 void snakeMove(char&, Map&, Snake&, char&);
 
 vector<vector<char> > createMap(Map&);
@@ -51,6 +57,8 @@ void createBarrier(Map&, vector<vector<int> >&);
 
 void selectBarrier(Map&, vector<int>&, vector<vector<int> >&);
 
+void generateFood(Map&, Food&, Snake&);
+
 
 int main()
 {
@@ -61,6 +69,9 @@ int main()
 
     // Make map struct
     Map mapData;
+
+    // Make food struct
+    Food food;
 
     // Ask user to input map size
     // The minimal vertical and horizontal size of the map is 25
@@ -88,6 +99,9 @@ int main()
     // Create barrier
     vector<vector<int> > barriers;
     createBarrier(mapData, barriers);
+
+    // Create foods
+    generateFood(mapData, food, snake);
 
     // Print the map
     printCurMap(mapData);
@@ -137,7 +151,6 @@ int main()
     return 0;
 }
 
-//testing function
 void createsnake(Map& mapData, Snake& snake)
 {
     //The four corner of the map
@@ -248,7 +261,6 @@ void createsnake(Map& mapData, Snake& snake)
     mapData.map[snake.body[2][1]][snake.body[2][0]] = 'x';
 }
 
-//testing function
 void snakeMove(char& key, Map& mapData, Snake& snake, char& pre_key)
 {
     // The four corner of the map
@@ -872,8 +884,55 @@ void selectBarrier(Map& mapData, vector<int>& referencePoint, vector<vector<int>
             coorH[1] = referencePoint[1] + 3;
             mapData.map[coorH[1]][coorH[0]] = 'H';
             barriers.push_back(coorH);
-            break;
-        
+            break;   
     }
+}
 
+void generateFood(Map& mapData,Food& food, Snake&)
+{
+    // The corners of the map
+    int top = MAP_HORBOND / 2;
+    int leftMost = MAP_VERBOND / 2;
+
+    int foodNum = mapData.map_horlen * mapData.map_verlen / 125; // area / 125 is the ratio of food number
+    int foodCount = 0;
+
+    while (foodCount < foodNum)
+    {
+        int randx = rand() % (mapData.map_horlen - 2);
+        int randy = rand() % (mapData.map_verlen - 2);
+        int foodx = leftMost + 1 + randx;
+        int foody = top + 1 + randy;
+
+        // 如果隨機生成的 food 座標在原本就存在的障礙物上(H)、之前產生的食物上(+, #)、蛇上(x, snake.y, snake.x)
+        // 就要重新產生一組 food 座標
+        if (
+            (mapData.map[foody][foodx] == '#') || 
+            (
+             ((mapData.map[foody][foodx] == 'H') || (mapData.map[foody][foodx] == 'x')) || 
+             (((foody == snake.y) && (foodx == snake.x)) || (mapData.map[foody][foodx] == '+'))
+            )
+           )
+        {
+            continue;
+        }
+
+        vector<int> foodCoor(2);
+        foodCoor[0] = foodx;
+        foodCoor[1] = foody;
+
+        // 有 10% 的機率會產生長 "#" 的食物，吃了會讓蛇速度加快
+        if (foodCount < (foodNum / 10 + 1))
+        {
+            mapData.map[foody][foodx] = '#';
+        }
+        else
+        {
+            mapData.map[foody][foodx] = '+';
+        }
+
+        food.coordinate.push_back(foodCoor);
+
+        foodCount++;
+    }
 }

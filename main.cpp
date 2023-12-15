@@ -33,7 +33,8 @@ struct Map
 
 struct Food
 {
-    vector<vector<int> > coordinate;
+    vector<vector<int> > normal_coordinate;
+    vector<vector<int> > poison_coordinate;
     int timer;
 };
 
@@ -888,7 +889,7 @@ void selectBarrier(Map& mapData, vector<int>& referencePoint, vector<vector<int>
     }
 }
 
-void generateFood(Map& mapData,Food& food, Snake&)
+void generateFood(Map& mapData,Food& food, Snake& snake)
 {
     // The corners of the map
     int top = MAP_HORBOND / 2;
@@ -925,14 +926,19 @@ void generateFood(Map& mapData,Food& food, Snake&)
         if (foodCount < (foodNum / 10 + 1))
         {
             mapData.map[foody][foodx] = '#';
+            food.poison_coordinate.push_back(foodCoor);
         }
         else
         {
             mapData.map[foody][foodx] = '+';
+            food.normal_coordinate.push_back(foodCoor);
         }
-
-        food.coordinate.push_back(foodCoor);
 
         foodCount++;
     }
 }
+
+// int checkCollision(Map& mapData, Snake&)
+// {
+
+// } 

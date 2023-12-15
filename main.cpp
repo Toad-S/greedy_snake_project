@@ -5,7 +5,6 @@
 #include <deque>
 #include <cstdlib>
 #include <ctime>
-#include <list>
 #include "get_keyboard_input.cpp"
 //因為不知道要怎麼一起執行 main.cpp 和 get_keyboard_input.cpp 所以先 include .cpp file instead of .hpp file
 using namespace std;
@@ -48,9 +47,15 @@ void recordboard(int&);
 
 void printCurMap(Map&);
 
+void createBarrier(Map&, vector<vector<int> >&);
+
+void selectBarrier(Map&, vector<int>&, vector<vector<int> >&);
+
 
 int main()
 {
+    srand(time(0));
+
     // Make snake struct
     Snake snake;
 
@@ -68,7 +73,7 @@ int main()
     } while ((mapData.map_verlen < 25) || (mapData.map_horlen < 25));
 
     // Set the record board
-    snake.len = 1;
+    snake.len = 3;
     int score = snake.len;
 
     system("clear"); // Clear the screen before printing the map and the record board
@@ -79,6 +84,10 @@ int main()
 
     // Create the snake
     createsnake(mapData, snake);
+
+    // Create barrier
+    vector<vector<int> > barriers;
+    createBarrier(mapData, barriers);
 
     // Print the map
     printCurMap(mapData);
@@ -102,7 +111,7 @@ int main()
 
         // Clear the console
         system("clear");
-        usleep(1000); // 1000微秒的閃爍頻率眼睛就看不出來了
+        usleep(1000); // 1000微秒的閃爍頻率眼睛就看不出來
         
         // Print the recordboard first
         recordboard(score);
@@ -138,7 +147,6 @@ void createsnake(Map& mapData, Snake& snake)
 
     // Choose the random place where the snake would be generated
     // The random place would only be on four boundaries
-    srand(time(0));
     //randomSide = 0 -> on the top boundary
     //randomSide = 1 -> on the bottom boundary
     //randomSide = 2 -> on the left boundary
@@ -444,4 +452,428 @@ void printCurMap(Map& mapData)
         }
         cout << endl;
     }
+}
+
+void createBarrier(Map& mapData, vector<vector<int> >& barriers)
+{
+    // The corners of the map
+    int top = MAP_HORBOND / 2;
+    int leftMost = MAP_VERBOND / 2;
+
+    int barrierNum = mapData.map_horlen * mapData.map_verlen * 2 / 625; // 2/625 是障礙物數量對地圖面積的比例
+    int horRegionNum = (mapData.map_horlen - 10) / 4;
+    int verRegionNum = (mapData.map_verlen - 5) / 4;
+
+    for (int i = 0; i < barrierNum; i++)
+    {
+        int randx = rand() % horRegionNum;
+        int randy = rand() % verRegionNum;
+        vector<int> referencePoint(2);
+
+        referencePoint[0] = leftMost + 6 + randx * 4;
+        referencePoint[1] = top + 1 + randy * 4;
+        
+        selectBarrier(mapData, referencePoint, barriers);
+    }
+}
+
+void selectBarrier(Map& mapData, vector<int>& referencePoint, vector<vector<int> >& barriers)
+{
+    int barrierType = rand() % 8;
+    vector<int> coorH(2);
+
+    switch (barrierType)
+    {
+        case 0:
+            /*
+            Type 0: 
+            H
+            HHHH
+               H
+            */
+
+            mapData.map[referencePoint[1]][referencePoint[0]] = 'H';
+            barriers.push_back(referencePoint);
+
+            coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+            break;
+        case 1:
+            /*
+            Type 1:
+            H H
+            HHHH
+             H H
+             HH
+            */
+            
+            mapData.map[referencePoint[1]][referencePoint[0]] = 'H';
+            barriers.push_back(referencePoint);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+            break;
+
+        case 2:
+            /*
+            Type 2:
+            HH
+             HHH
+               H
+            */
+            
+            mapData.map[referencePoint[1]][referencePoint[0]] = 'H';
+            barriers.push_back(referencePoint);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+            break;
+        case 3:
+            /*
+            Type 3:
+             HH
+             HH
+             HH
+             HH
+            */
+            
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+            break;
+        case 4:
+            /*
+             HH
+            HHHH
+            H  H
+             HHH
+            */
+            
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+            break;
+        case 5:
+            /*
+            HHHH
+               H
+               H
+            */
+            
+            mapData.map[referencePoint[1]][referencePoint[0]] = 'H';
+            barriers.push_back(referencePoint);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+            break;
+        case 6:
+            /*
+            
+             HHH
+            H H
+            HHHH
+            */
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+            break;
+        case 7:
+            /*
+               H
+            HHHH
+            HHHH
+               H
+            */
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1];
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 1;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 3;
+            coorH[1] = referencePoint[1] + 3;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+            break;
+        
+    }
+
 }

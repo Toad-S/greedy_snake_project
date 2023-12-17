@@ -19,7 +19,7 @@ char getkeyin();
 // {
 //     while (true)
 //     {
-//         char key = getkeyin();
+//         char key = getkeyin(100000);
         
 //         if (key == 'q')
 //             break;
@@ -32,7 +32,7 @@ char getkeyin();
 //     return 0;
 // }
 
-char getkeyin()
+char getkeyin(int& refresh_frequency)
 {
     // Set terminal to non-blocking mode
     setNonBlockingMode();
@@ -44,7 +44,7 @@ char getkeyin()
 
     struct timeval timeout;
     timeout.tv_sec = 0;  // input 時間限制（單位：秒）
-    timeout.tv_usec = 62500; // input 時間限制（單位：微秒）
+    timeout.tv_usec = refresh_frequency; // input 時間限制（單位：微秒）
 
     // Check input time
     int result = select(STDIN_FILENO + 1, &fds, nullptr, nullptr, &timeout);

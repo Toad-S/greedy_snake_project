@@ -9,24 +9,34 @@ using namespace std;
 void setNonBlockingMode();
 // Function to set terminal attributes for non-blocking input
 
-char getkeyin();
+char getkeyin(int&);
 // Function that gets a keyboard input immediately
 // and return the character that it gets from the keyboard input
 
 
-//use for debuging
+// use for debuging
 // int main()
 // {
 //     while (true)
 //     {
-//         char key = getkeyin(100000);
-        
-//         if (key == 'q')
-//             break;
-        
-//         system("clear");
-//         usleep(10000);
-//         cout << "keypressed: " << key << endl;
+//         char key = '0';
+//         while (key != 'q')
+//         {
+//             int refresh_frequency = 100000;
+//             key = getkeyin(refresh_frequency);
+            
+//             // if (key == 'q')
+//             //     break;
+            
+//             system("clear");
+//             usleep(10000);
+//             cout << "keypressed: " << key << endl;
+//         }
+
+//         string str;
+//         cout << "input something" << endl;
+//         cin >> str;
+//         cout << str << endl;
 //     }
 
 //     return 0;
@@ -92,8 +102,7 @@ void setNonBlockingMode()
     // c_lflag 是一由一個個 bit 組成的，c_lflag 裡面的每個 bit 都表示一個控制項
     // ICANON 是一個在 c_lflag 中的其中一個 bit，控制 canonical mode 的 on/off -> off 就會只累積一個輸入，而不會累積一行
     // ECHO 是一個在 c_lflag 中的其中一個 bit，控制 terminal input 的 echo 的 on/off -> off 就會不在 terminal 中顯示重複輸入
-    ttystate.c_lflag &= ~ICANON;
-    ttystate.c_lflag &= ~ECHO;
+    ttystate.c_lflag &= ~(ICANON | ECHO);
 
     // tcsetattr stands for "Terminal Control Set Attributes"
     // Set the new attributes，把改好的 state set 回去

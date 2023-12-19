@@ -1,12 +1,13 @@
 #include <iostream>
 #include <fstream>
-#include <unistd.h>
 #include <string>
 #include <vector>
 #include <deque>
 #include <cstdlib>
 #include <ctime>
 #include <chrono>
+#include <unistd.h>
+#include <termios.h>
 #include "get_keyboard_input.cpp"
 //因為不知道要怎麼一起執行 main.cpp 和 get_keyboard_input.cpp 所以先 include .cpp file instead of .hpp file
 using namespace std;
@@ -73,174 +74,195 @@ void speedUp(Map&, int);
 
 int checkCollision(Map&, Snake&, char&, char&);
 
-void gameOver(Map&, Snake&, int);
+int gameOver(Map&, Snake&, int);
 
 
 int main()
 {
     srand(time(0));
 
-    // Make snake struct
-    Snake snake;
-
-    // Make map struct
-    Map mapData;
-
-    // Make food struct
-    Food food;
-
-    // Ask user to input map size
-    // The minimal vertical and horizontal size of the map is 25
-    do
-    {
-        cout << "Enter the vertical size of the map (minimal vertical size: 25): ";
-        cin >> mapData.map_verlen;
-        cout << "Enter the horizontal size of the map (minimal horizontal size: 25): ";
-        cin >> mapData.map_horlen;
-    } while ((mapData.map_verlen < 25) || (mapData.map_horlen < 25));
-
-    // Set the record board
-    snake.len = 3; // snake length = the score
-    system("clear"); // Clear the screen before printing the map and the record board
-    recordboard(mapData, snake); // Print the record board
-
-    // Get the map vector
-    mapData.map = createMap(mapData);
-
-    // Create the snake
-    createsnake(mapData, snake);
-
-    // Create barrier
-    vector<vector<int> > barriers;
-    createBarrier(mapData, barriers);
-
-    // Create foods
-    generateFood(mapData, food, snake);
-
-    // Print the map
-    printCurMap(mapData);
-
-    // Set timers
-    steady_clock::time_point old_time_fifteen = steady_clock::now();
-    steady_clock::time_point old_time_one = steady_clock::now();
-    mapData.gametimer = 0;
-    snake.starve_timer = 0;
-    food.timer = 0;
-
-    // Set map refresh frequency (snake speed)
-    mapData.refresh_frequency = 100000; // 初始設定 100000微秒
-
-    // Game over flag
-    int gameover = 0;
-
-    char pre_key = 'd'; // 預設如果沒按按鍵就先往右走
-
     while (true)
     {
-        // Get the current keyboard input
-        char key = getkeyin(mapData.refresh_frequency);
-        // getkeyin() has a input time limit.
-        // When user doesn't input any value within 1/16 sec, it'll return '0'
+        // Make snake struct
+        Snake snake;
 
-        // Move the snake
-        if (key == 'q') // Exit checking
-        {
-            exit(1);
-        }
-        else if (key == 'r') // Restart a new game
-        {
-            break;
-        }
-        else if ((key == '0') || (((key == 'w') || (key == 'a')) || ((key == 's') || (key == 'd')))) // input is w, a, s, d, 0
-        {
-            int state = checkCollision(mapData, snake, key, pre_key);
+        // Make map struct
+        Map mapData;
 
-            if (state == 2)
+        // Make food struct
+        Food food;
+
+        // Ask user to input map size
+        // The minimal vertical and horizontal size of the map is 25
+        do
+        {
+            string inputstr;
+            cout << "Enter the vertical size of the map (minimal vertical size: 25): ";
+            cin >> mapData.map_verlen;
+            cout << "Enter the horizontal size of the map (minimal horizontal size: 25): ";
+            cin >> mapData.map_horlen;
+        } while ((mapData.map_verlen < 25) || (mapData.map_horlen < 25));
+
+        // Set the record board
+        snake.len = 3; // snake length = the score
+        system("clear"); // Clear the screen before printing the map and the record board
+        recordboard(mapData, snake); // Print the record board
+
+        // Get the map vector
+        mapData.map = createMap(mapData);
+
+        // Create the snake
+        createsnake(mapData, snake);
+
+        // Create barrier
+        vector<vector<int> > barriers;
+        createBarrier(mapData, barriers);
+
+        // Create foods
+        generateFood(mapData, food, snake);
+
+        // Print the map
+        printCurMap(mapData);
+
+        // Set timers
+        steady_clock::time_point old_time_fifteen = steady_clock::now();
+        steady_clock::time_point old_time_one = steady_clock::now();
+        mapData.gametimer = 0;
+        snake.starve_timer = 0;
+        food.timer = 0;
+
+        // Set map refresh frequency (snake speed)
+        mapData.refresh_frequency = 100000; // 初始設定 100000微秒
+
+        // Game over flag
+        int gameover = 0;
+
+        char pre_key = 'd'; // 預設如果沒按按鍵就先往右走
+
+        while (gameover == 0)
+        {
+            // Get the current keyboard input
+            char key = getkeyin(mapData.refresh_frequency);
+            // getkeyin() has a input time limit.
+            // When user doesn't input any value within 1/16 sec, it'll return '0'
+
+            // Move the snake
+            if (key == 'q') // Exit checking
             {
-                // Game over
-                gameover = 1;
-                break;
+                exit(1);
             }
-            else
+            else if (key == 'r') // Restart a new game
             {
-                snakeMove(key, mapData, snake, pre_key, state);
+                // Game restart
+                gameover = 3;
+            }
+            else if ((key == '0') || (((key == 'w') || (key == 'a')) || ((key == 's') || (key == 'd')))) // input is w, a, s, d, 0
+            {
+                int state = checkCollision(mapData, snake, key, pre_key);
 
-                // Remember the w, a, s, d input as the previous input
-                // 此時就要先知道上次輸入是往哪邊走，才能決定蛇要繼續往哪個方向走
-                // 同時作為使用者操作 w, a, s, d 的輔助功能
-                // （輸入w或s後，再輸日a或d之前不能再有w或s的訊號傳進snakeMove()讓蛇動)
-                // （輸入a或d後，再輸日w或s之前不能再有a或d的訊號傳進snakeMove()讓蛇動）
-                if (key != '0')
+                if (state == 2)
                 {
-                    pre_key = key;
-                }
-
-                // 食物控制項
-                if (state == 1) // 蛇吃到食物後要執行的
-                {
-                    clearFood(mapData, food);
-                    generateFood(mapData, food, snake); // 蛇吃到食物後要讓所有食物重生
-                    snake.starve_timer = 0; // 紀錄蛇沒吃到食物的時間的計時器歸零
-                }
-                else // 蛇沒吃到食物要檢查食物有沒有過期
-                {
-                    if ((food.timer > 3) && (food.timer <= 6))
-                    {
-                        foodRot(mapData, food); // 食物快要過期，更改食物外表
-                    }
-                    else if (food.timer > 6)
-                    {
-                        clearFood(mapData, food);
-                        generateFood(mapData, food, snake); // 食物過期，重生食物
-                    }
-                }
-
-                // 蛇飢餓度控制項
-                if (snake.starve_timer >= 15)
-                {
-                    gameover = 2; // 蛇沒吃到食物 15 秒後就餓死
+                    // Game over
+                    gameover = 1;
                     break;
                 }
-
-                // Clear the console
-                system("clear");
-                usleep(1000); // 1000微秒的閃爍頻率眼睛就看不出來
-                
-                // Print the recordboard first
-                recordboard(mapData, snake);
-
-                // Print current map
-                printCurMap(mapData);
-                
-                // 紀錄遊戲進行時間
-                steady_clock::time_point new_time = steady_clock::now();
-                double one_sec_gap = duration_cast<duration<double> >(new_time - old_time_one).count();
-                double fifteen_sec_gap = duration_cast<duration<double> >(new_time - old_time_fifteen).count();
-
-                if (one_sec_gap >= 1.0)
+                else
                 {
-                    food.timer++;
-                    snake.starve_timer++;
-                    mapData.gametimer++;
-                    old_time_one = new_time; // 每過一秒更新 old_time 一次（old_time是用來計算過了一秒了沒）
-                }
+                    snakeMove(key, mapData, snake, pre_key, state);
 
-                // 遊戲每進行 15 秒，蛇就要加速一次 -> 越玩難度越高
-                if (fifteen_sec_gap >= 15.0)
-                {
-                    speedUp(mapData, 0); // 加速 mode 0，加速速率較吃到特殊食物慢十倍
-                    old_time_fifteen = new_time;
-                }                
-            }      
+                    // Remember the w, a, s, d input as the previous input
+                    // 此時就要先知道上次輸入是往哪邊走，才能決定蛇要繼續往哪個方向走
+                    // 同時作為使用者操作 w, a, s, d 的輔助功能
+                    // （輸入w或s後，再輸日a或d之前不能再有w或s的訊號傳進snakeMove()讓蛇動)
+                    // （輸入a或d後，再輸日w或s之前不能再有a或d的訊號傳進snakeMove()讓蛇動）
+                    if (key != '0')
+                    {
+                        pre_key = key;
+                    }
+
+                    // 食物控制項
+                    if (state == 1) // 蛇吃到食物後要執行的
+                    {
+                        clearFood(mapData, food);
+                        generateFood(mapData, food, snake); // 蛇吃到食物後要讓所有食物重生
+                        snake.starve_timer = 0; // 紀錄蛇沒吃到食物的時間的計時器歸零
+                    }
+                    else // 蛇沒吃到食物要檢查食物有沒有過期
+                    {
+                        if ((food.timer > 3) && (food.timer <= 6))
+                        {
+                            foodRot(mapData, food); // 食物快要過期，更改食物外表
+                        }
+                        else if (food.timer > 6)
+                        {
+                            clearFood(mapData, food);
+                            generateFood(mapData, food, snake); // 食物過期，重生食物
+                        }
+                    }
+
+                    // 蛇飢餓度控制項
+                    if (snake.starve_timer >= 15)
+                    {
+                        gameover = 2; // 蛇沒吃到食物 15 秒後就餓死
+                        break;
+                    }
+
+                    // Clear the console
+                    system("clear");
+                    usleep(1000); // 1000微秒的閃爍頻率眼睛就看不出來
+                    
+                    // Print the recordboard first
+                    recordboard(mapData, snake);
+
+                    // Print current map
+                    printCurMap(mapData);
+                    
+                    // 紀錄遊戲進行時間
+                    steady_clock::time_point new_time = steady_clock::now();
+                    double one_sec_gap = duration_cast<duration<double> >(new_time - old_time_one).count();
+                    double fifteen_sec_gap = duration_cast<duration<double> >(new_time - old_time_fifteen).count();
+
+                    if (one_sec_gap >= 1.0)
+                    {
+                        food.timer++;
+                        snake.starve_timer++;
+                        mapData.gametimer++;
+                        old_time_one = new_time; // 每過一秒更新 old_time 一次（old_time是用來計算過了一秒了沒）
+                    }
+
+                    // 遊戲每進行 15 秒，蛇就要加速一次 -> 越玩難度越高
+                    if (fifteen_sec_gap >= 15.0)
+                    {
+                        speedUp(mapData, 0); // 加速 mode 0，加速速率較吃到特殊食物慢十倍
+                        old_time_fifteen = new_time;
+                    }                
+                }      
+            }
+                
         }
-            
-    }
 
-    // Game over
-    if (gameover)
-    {
+
+        // Reset terminal attributes (turn on line buffer and echo)
+        struct termios ttystate;
+        tcgetattr(STDIN_FILENO, &ttystate);
+        ttystate.c_lflag |= (ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &ttystate);
+
+        // Game over
         system("clear"); // Clear the console
-        gameOver(mapData, snake, gameover);
+        if(gameOver(mapData, snake, gameover))
+        {
+            string restart;
+            cout << "Would you like to start a new game? (Enter 'y' or 'Y' for Yes; 'n' or 'N' for No) ";
+            cin >> restart;
+
+            if ((restart != "Y") && (restart != "y"))
+            {
+                break;
+            }
+
+            cout << endl;
+        }
     }
 
     return 0;
@@ -713,6 +735,11 @@ void selectBarrier(Map& mapData, vector<int>& referencePoint, vector<vector<int>
             mapData.map[coorH[1]][coorH[0]] = 'H';
             barriers.push_back(coorH);
 
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
             coorH[0] = referencePoint[0] + 3;
             coorH[1] = referencePoint[1] + 2;
             mapData.map[coorH[1]][coorH[0]] = 'H';
@@ -857,6 +884,16 @@ void selectBarrier(Map& mapData, vector<int>& referencePoint, vector<vector<int>
             mapData.map[coorH[1]][coorH[0]] = 'H';
             barriers.push_back(coorH);
 
+            coorH[0] = referencePoint[0] + 1;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 2;
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
             coorH[0] = referencePoint[0] + 3;
             coorH[1] = referencePoint[1] + 2;
             mapData.map[coorH[1]][coorH[0]] = 'H';
@@ -936,6 +973,11 @@ void selectBarrier(Map& mapData, vector<int>& referencePoint, vector<vector<int>
             barriers.push_back(coorH);
 
             coorH[0] = referencePoint[0];
+            coorH[1] = referencePoint[1] + 2;
+            mapData.map[coorH[1]][coorH[0]] = 'H';
+            barriers.push_back(coorH);
+
+            coorH[0] = referencePoint[0] + 1;
             coorH[1] = referencePoint[1] + 2;
             mapData.map[coorH[1]][coorH[0]] = 'H';
             barriers.push_back(coorH);
@@ -1109,11 +1151,11 @@ void foodRot(Map& mapData, Food& food)
 
 void speedUp(Map& mapData, int mode)
 {
-    if ((mapData.refresh_frequency >= 30000) && (mode == 0)) // mode 0 是每 15 秒蛇自動加速一次的加速速率
+    if ((mapData.refresh_frequency >= 45000) && (mode == 0)) // mode 0 是每 15 秒蛇自動加速一次的加速速率
     {
         mapData.refresh_frequency -= 1000;
     }
-    else if ((mapData.refresh_frequency >= 40000) && (mode == 1)) // mode 1 是蛇吃到陷阱食物的加速速率
+    else if ((mapData.refresh_frequency >= 50000) && (mode == 1)) // mode 1 是蛇吃到陷阱食物的加速速率
     {
         mapData.refresh_frequency -= 10000;
     }
@@ -1273,7 +1315,7 @@ int checkCollision(Map& mapData, Snake& snake, char& key, char& pre_key)
     return 0; // default 狀況就設為蛇正常移動
 } 
 
-void gameOver(Map& mapData, Snake& snake, int deadmessage)
+int gameOver(Map& mapData, Snake& snake, int deadmessage)
 {
     cout << endl;
 
@@ -1294,12 +1336,19 @@ void gameOver(Map& mapData, Snake& snake, int deadmessage)
     cout << "Score: " << snake.len << endl;
     cout << "Game last: " << mapData.gametimer << " seconds" << endl;
     
-    if (deadmessage == 1)
+    switch (deadmessage)
     {
-        cout << "YOU BUMPED INTO THE WALL !" << endl;
+        case 1:
+            cout << "YOU BUMPED INTO THE WALL !" << endl;
+            break;
+        case 2:
+            cout << "YOU STARVED TO DEAD !" << endl;
+            break;
+        case 3:
+            cout << "Game restart" << endl;
+            return 0; // return 0 代表不用詢問，直接開始下一局
+            break;
     }
-    else if (deadmessage == 2)
-    {
-        cout << "YOU STARVED TO DEAD !" << endl;
-    }
+
+    return 1; // return 1 代表要詢問要不要繼續下一局
 }

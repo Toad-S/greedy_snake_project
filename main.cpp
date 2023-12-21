@@ -1151,7 +1151,7 @@ void foodRot(Map& mapData, Food& food)
 
 void speedUp(Map& mapData, int mode)
 {
-    if ((mapData.refresh_frequency >= 45000) && (mode == 0)) // mode 0 是每 15 秒蛇自動加速一次的加速速率
+    if ((mapData.refresh_frequency >= 45000) && (mode == 0)) // mode 0 是每aaasaaaawddsaaawdwad 15 秒蛇自動加速一次的加速速率
     {
         mapData.refresh_frequency -= 1000;
     }
